@@ -1,0 +1,334 @@
+---
+title: Component Reference
+description: Detailed reference for all entity components in Hydra
+---
+
+## Overview
+
+Components define the capabilities and attributes of entities. This page documents all available components, their fields, and usage patterns.
+
+## Core Metadata Components
+
+### ControllerRef
+
+Identifies which system contributed this entity to the common operating picture.
+
+**Fields:**
+- `id` (string) - Unique identifier of the controlling system
+- `name` (string) - Human-readable name of the controller
+
+**Example:**
+```typescript
+controller: {
+  id: 'sensor-array-alpha',
+  name: 'Northern Sensor Network'
+}
+```
+
+**When to use:** Attach to entities created by your system to track ownership and data provenance.
+
+---
+
+### Lifetime
+
+Defines the temporal validity of an entity. Hydra automatically expires entities when `until` is reached.
+
+**Fields:**
+- `from` (Timestamp, optional) - When this entity becomes valid
+- `until` (Timestamp, optional) - When this entity expires
+
+**Example:**
+```typescript
+lifetime: {
+  from: new Date('2025-01-15T10:00:00Z'),
+  until: new Date('2025-01-15T18:00:00Z')
+}
+```
+
+**When to use:**
+- Temporary markers or waypoints
+- Time-limited detections
+- Scheduled events or planned movements
+- Historical data with known validity windows
+
+---
+
+### Priority
+
+Controls Quality of Service for bandwidth-constrained networks (DDIL scenarios).
+
+**Values:**
+- `PriorityLow (1)` - Send when bandwidth available, tolerate loss
+- `PriorityHigh (2)` - Send before low, respect bandwidth limits
+- `PriorityBurst (3)` - Ignore limits, send immediately (mission critical only)
+
+**Example:**
+```typescript
+priority: Priority.PriorityHigh
+```
+
+**When to use:**
+- Set `PriorityBurst` for immediate threats or emergency alerts
+- Use `PriorityHigh` for detections and tracks
+- Use `PriorityLow` for auxiliary information, metadata, or non-urgent updates
+
+---
+
+## Spatial Components
+
+### GeoSpatialComponent
+
+Physical location in 3D space using WGS84 coordinates.
+
+**Fields:**
+- `latitude` (double) - Decimal degrees, -90 to 90
+- `longitude` (double) - Decimal degrees, -180 to 180
+- `altitude` (double) - Meters above WGS84 ellipsoid
+
+**Example:**
+```typescript
+geo: {
+  latitude: 52.5200,
+  longitude: 13.4050,
+  altitude: 100
+}
+```
+
+**When to use:** Nearly all entities that have a physical location. This is the most common component.
+
+---
+
+### BearingComponent
+
+Directional vector for entities that point or move in a direction.
+
+**Fields:**
+- `azimuth` (double, optional) - Horizontal angle in degrees (0-360), where 0 is North
+- `elevation` (double, optional) - Vertical angle in degrees (-90 to 90)
+
+**Example:**
+```typescript
+bearing: {
+  azimuth: 270,    // Pointing West
+  elevation: 15    // 15 degrees above horizon
+}
+```
+
+**When to use:**
+- Camera or sensor pointing direction
+- Movement direction for tracks
+- Line-of-sight vectors
+- Beam directions for RF sensors
+
+---
+
+### LocationUncertaintyComponent
+
+Represents spatial uncertainty using covariance matrices.
+
+**Fields:**
+- `positionEnuCov` (CovarianceMatrix, optional) - Position uncertainty in ENU coordinates
+- `velocityEnuCov` (CovarianceMatrix, optional) - Velocity uncertainty in ENU coordinates
+
+**CovarianceMatrix fields:**
+- `mxx`, `mxy`, `mxz`, `myy`, `myz`, `mzz` (double, optional)
+
+**Example:**
+```typescript
+locationUncertainty: {
+  positionEnuCov: {
+    mxx: 10.0,   // Variance in East direction
+    myy: 10.0,   // Variance in North direction
+    mzz: 5.0     // Variance in Up direction
+  }
+}
+```
+
+**When to use:** Track fusion, sensor accuracy modeling, confidence regions for detections.
+
+---
+
+## Visual Representation
+
+### SymbolComponent
+
+Visual representation using military symbology standards.
+
+**Fields:**
+- `milStd2525C` (string) - MIL-STD-2525C symbol identification code (SIDC)
+
+**Common SIDCs:**
+- `SFGPES----` - Friendly ground radar
+- `SFGPE-----` - Friendly ground sensor
+- `SHAPMFQ----` - Hostile air track (rotary wing)
+- `SUAPMFQ----` - Unknown air track
+
+**Example:**
+```typescript
+symbol: {
+  milStd2525C: 'SFGPES----'
+}
+```
+
+**When to use:** Any entity that should appear on a tactical display or map.
+
+---
+
+## Sensor and Detection Components
+
+### DetectionComponent
+
+Links a detection to its source sensor and provides classification.
+
+**Fields:**
+- `detectorEntityID` (string, optional) - ID of the sensor entity that made this detection
+- `classification` (string, optional) - Type classification (e.g., "drone", "vehicle", "person")
+- `lastMeasured` (Timestamp, optional) - When this detection was last updated
+
+**Example:**
+```typescript
+detection: {
+  detectorEntityID: 'radar-1',
+  classification: 'drone',
+  lastMeasured: new Date('2025-01-15T10:30:00Z')
+}
+```
+
+**When to use:** Raw sensor detections before track fusion.
+
+---
+
+### TrackComponent
+
+Marks an entity as a fused track (combination of multiple detections).
+
+**Fields:** None (presence indicates this is a track)
+
+**Example:**
+```typescript
+track: {}
+```
+
+**When to use:** After correlating multiple detections from different sensors into a unified track.
+
+---
+
+### LocatorComponent
+
+Indicates this sensor is actively locating another entity.
+
+**Fields:**
+- `locatedEntityID` (string) - ID of the entity being located/tracked
+
+**Example:**
+```typescript
+locator: {
+  locatedEntityID: 'target-001'
+}
+```
+
+**When to use:** Show which sensors are tracking which targets, sensor-to-target associations.
+
+---
+
+## Camera and Observation
+
+### CameraComponent
+
+Provides video feed URLs for visual observation.
+
+**Fields:**
+- `cameras` (array of Camera) - List of available camera feeds
+
+**Camera fields:**
+- `label` (string) - Display name for this feed
+- `url` (string) - Streaming URL (RTSP, HLS, etc.)
+
+**Example:**
+```typescript
+camera: {
+  cameras: [
+    {
+      label: 'Main View',
+      url: 'rtsp://camera.example.com/stream1'
+    },
+    {
+      label: 'Thermal',
+      url: 'rtsp://camera.example.com/thermal'
+    }
+  ]
+}
+```
+
+**When to use:** PTZ cameras, UAV feeds, fixed surveillance cameras.
+
+---
+
+## Task and Assignment
+
+### TaskableComponent
+
+Defines an assignable task with context and assignees.
+
+**Fields:**
+- `label` (string, optional) - Human-readable task description
+- `context` (array of TaskableContext) - Entities this task relates to
+- `assignee` (array of TaskableAssignee) - Entities assigned to execute this task
+
+**TaskableContext/TaskableAssignee fields:**
+- `entityId` (string, optional) - ID of referenced entity
+
+**Example:**
+```typescript
+taskable: {
+  label: 'View with Camera',
+  context: [
+    { entityId: 'target-001' }  // What to look at
+  ],
+  assignee: [
+    { entityId: 'camera-1' }    // Who should do it
+  ]
+}
+```
+
+**When to use:**
+- Assign sensors to track targets
+- Create inspection tasks
+- Coordinate multiple assets on a mission
+- Workflow automation between systems
+
+---
+
+## Component Combinations
+
+### Common Patterns
+
+**Basic Position Marker:**
+```typescript
+{ id, geo, symbol }
+```
+
+**Sensor Station:**
+```typescript
+{ id, geo, symbol, bearing, camera }
+```
+
+**Detection:**
+```typescript
+{ id, geo, detection, bearing }
+```
+
+**Fused Track:**
+```typescript
+{ id, geo, symbol, track, bearing, locationUncertainty }
+```
+
+**Task Assignment:**
+```typescript
+{ id, taskable }
+```
+
+## Next Steps
+
+- [Creating Entities](/docs/creating-entities) - Learn how to create entities with components
+- [Understanding Entities](/docs/entities) - Learn about the Entity Component System

@@ -1,0 +1,116 @@
+---
+title: Getting Started
+description: Start building with Hydra situational awareness
+---
+
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
+
+## Quick Start
+
+### 1. Download and Run Hydra
+
+Download the latest release from [GitHub](https://github.com/projectqai/hydra/releases) and start the server:
+
+```bash
+./hydra
+```
+
+Hydra starts on `localhost:50051` with a web UI at `http://localhost:50051`
+
+### 2. Connect Your First Client
+
+Install the gRPC client libraries for your language:
+
+<Tabs items={['TypeScript', 'Python', 'Go']}>
+  <Tab value="TypeScript">
+    ```bash
+    npm install @grpc/grpc-js @protobuf-ts/grpc-transport
+    ```
+  </Tab>
+  <Tab value="Python">
+    ```bash
+    pip install grpcio grpcio-tools
+    ```
+  </Tab>
+  <Tab value="Go">
+    ```bash
+    go get google.golang.org/grpc
+    go get github.com/projectqai/proto/go
+    ```
+  </Tab>
+</Tabs>
+
+### 3. Create Your First Entity
+
+<Tabs items={['TypeScript', 'Python', 'Go']}>
+  <Tab value="TypeScript">
+    ```typescript
+    const entity = {
+      id: 'sensor-1',
+      geo: {
+        latitude: 52.52,
+        longitude: 13.40,
+        altitude: 100
+      },
+      symbol: {
+        milStd2525C: 'SFGPES----'
+      }
+    };
+    ```
+  </Tab>
+  <Tab value="Python">
+    ```python
+    from world_pb2 import Entity, GeoSpatialComponent, SymbolComponent
+
+    entity = Entity(
+        id='sensor-1',
+        geo=GeoSpatialComponent(
+            latitude=52.52,
+            longitude=13.40,
+            altitude=100
+        ),
+        symbol=SymbolComponent(
+            milStd2525C='SFGPES----'
+        )
+    )
+    ```
+  </Tab>
+  <Tab value="Go">
+    ```go
+    import pb "github.com/projectqai/proto/go"
+
+    entity := &pb.Entity{
+        Id: "sensor-1",
+        Geo: &pb.GeoSpatialComponent{
+            Latitude:  52.52,
+            Longitude: 13.40,
+            Altitude:  100,
+        },
+        Symbol: &pb.SymbolComponent{
+            MilStd2525C: "SFGPES----",
+        },
+    }
+    ```
+  </Tab>
+</Tabs>
+
+## Core Concepts
+
+<Cards>
+  <Card title="Understanding Entities" href="/docs/entities">
+    Learn about Hydra's Entity Component System and how entities work
+  </Card>
+  <Card title="Creating Entities" href="/docs/creating-entities">
+    Create and push entities with examples in TypeScript, Python, and Go
+  </Card>
+  <Card title="Taskables" href="/docs/taskables">
+    Coordinate actions across systems with executable tasks
+  </Card>
+  <Card title="Component Reference" href="/docs/components">
+    Detailed documentation of all available components
+  </Card>
+</Cards>
+
+## Next Steps
+
+Start by understanding [what entities are](/docs/entities) and how they work in Hydra's architecture.
